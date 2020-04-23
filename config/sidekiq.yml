@@ -1,0 +1,5 @@
+---
+:verbose: true
+:concurrency: 5
+:queues:
+  - start_voting
