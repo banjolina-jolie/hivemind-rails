@@ -33,7 +33,7 @@ class Question < ApplicationRecord
     update({ job_id: "#{job_id} #{job.job_id}", voting_round_end_time: in_thirty_sec})
 
     EM.run {
-      ws = Faye::WebSocket::Client.new("ws://127.0.0.1:9001?question=#{id}&start=true&voting_round_end_time=#{in_thirty_sec}")
+      ws = Faye::WebSocket::Client.new("wss://hivemind-ws.herokuapp.com?question=#{id}&start=true&voting_round_end_time=#{in_thirty_sec}")
 
       ws.on :open do |event|
         p [:open]
@@ -85,7 +85,7 @@ class Question < ApplicationRecord
 
     # push update to all WSs
     EM.run {
-      ws = Faye::WebSocket::Client.new("ws://127.0.0.1:9001?question=#{id}&vote_next_word=true&winning_word=#{winning_word}&voting_round_end_time=#{in_thirty_sec}")
+      ws = Faye::WebSocket::Client.new("wss://hivemind-ws.herokuapp.com?question=#{id}&vote_next_word=true&winning_word=#{winning_word}&voting_round_end_time=#{in_thirty_sec}")
 
       ws.on :open do |event|
         p [:open]
