@@ -30,17 +30,28 @@ class Question < ApplicationRecord
     redis_client.zrevrangebyscore(sorted_set_name, '+inf', 1, { withscores: true })
   end
 
+  def set_next_voting_round_timer
+    EventMachine.run {
+      EventMachine.add_timer(30) {
+        if voting_round_end_time
+          vote_next_word
+        end
+      }
+    }
+  end
+
   def sorted_set_name
     "#{id}-scores"
   end
 
   def activate_voting
     in_thirty_sec = Time.now + 30.seconds
-    job = ChangeVotingWordIdxJob.set(wait: 30.seconds).perform_later(id)
-    update({ job_id: "#{job_id} #{job.job_id}", voting_round_end_time: in_thirty_sec})
+    update({ voting_round_end_time: in_thirty_sec })
+
+    set_next_voting_round_timer
 
     EM.run {
-      ws = Faye::WebSocket::Client.new("#{ws_url}?question=#{id}&start=true&voting_round_end_time=#{in_thirty_sec}")
+      ws = Faye::WebSocket::Client.new("#{ws_url}?question=#{id}&start=true&voting_round_end_time=#{(Time.now + 30.seconds).to_i * 1000}")
 
       ws.on :open do |event|
         p [:open]
@@ -83,8 +94,8 @@ class Question < ApplicationRecord
     else
       # concat winning_word to `question_text`
       new_answer = "#{answer} #{winning_word}"
-      job = ChangeVotingWordIdxJob.set(wait: 30.seconds).perform_later(id)
-      update({ answer: new_answer, job_id: "#{job_id} #{job.job_id}", voting_round_end_time: in_thirty_sec })
+      set_next_voting_round_timer
+      update({ answer: new_answer, voting_round_end_time: in_thirty_sec })
     end
 
     # clear redis
@@ -92,7 +103,7 @@ class Question < ApplicationRecord
 
     # push update to all WSs
     EM.run {
-      ws = Faye::WebSocket::Client.new("#{ws_url}?question=#{id}&vote_next_word=true&winning_word=#{winning_word}&voting_round_end_time=#{in_thirty_sec}")
+      ws = Faye::WebSocket::Client.new("#{ws_url}?question=#{id}&vote_next_word=true&winning_word=#{winning_word}&voting_round_end_time=#{(Time.now + 30.seconds).to_i * 1000}")
 
       ws.on :open do |event|
         p [:open]
@@ -126,11 +137,24 @@ class Question < ApplicationRecord
 
     if start_time && start_time > Time.now
       # create new job
-      job = StartVotingJob.set(wait_until: start_time).perform_later(id)
-      update({ job_id: job.job_id})
+      EventMachine.run {
+        timer_delay = start_time.to_i - Time.now.to_i
+
+        if timer_delay > 0
+          EventMachine.add_timer(timer_delay) {
+            diff = (start_time.to_i - Time.now.to_i).abs
+            puts diff
+            if diff <= 10
+              activate_voting
+            end
+          }
+        end
+      }
+      # job = StartVotingJob.set(wait_until: start_time).perform_later(id)
+      # update({ job_id: job.job_id})
     else
       # clear job_id
-      update({ job_id: nil})
+      # update({ job_id: nil})
     end
   end
 
