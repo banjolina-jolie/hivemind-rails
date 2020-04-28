@@ -4,7 +4,6 @@ require 'faye/websocket'
 require 'eventmachine'
 require 'timeout'
 
-
 class Question < ApplicationRecord
   attr_accessor :redis_client
 
@@ -13,6 +12,14 @@ class Question < ApplicationRecord
   attribute :question_text, :string
   attribute :answer, :string
   attribute :job_id, :string
+
+  def ws_url
+    if Rails.env.production?
+      'ws://hivemind-ws.herokuapp.com'
+    else
+      'ws://localhost:9001'
+    end
+  end
 
   def redis_client
     @redis_client = @redis_client || Redis.new
@@ -33,7 +40,7 @@ class Question < ApplicationRecord
     update({ job_id: "#{job_id} #{job.job_id}", voting_round_end_time: in_thirty_sec})
 
     EM.run {
-      ws = Faye::WebSocket::Client.new("wss://hivemind-ws.herokuapp.com?question=#{id}&start=true&voting_round_end_time=#{in_thirty_sec}")
+      ws = Faye::WebSocket::Client.new("#{ws_url}?question=#{id}&start=true&voting_round_end_time=#{in_thirty_sec}")
 
       ws.on :open do |event|
         p [:open]
@@ -85,7 +92,7 @@ class Question < ApplicationRecord
 
     # push update to all WSs
     EM.run {
-      ws = Faye::WebSocket::Client.new("wss://hivemind-ws.herokuapp.com?question=#{id}&vote_next_word=true&winning_word=#{winning_word}&voting_round_end_time=#{in_thirty_sec}")
+      ws = Faye::WebSocket::Client.new("#{ws_url}?question=#{id}&vote_next_word=true&winning_word=#{winning_word}&voting_round_end_time=#{in_thirty_sec}")
 
       ws.on :open do |event|
         p [:open]
