@@ -31,13 +31,9 @@ class Question < ApplicationRecord
   end
 
   def set_next_voting_round_timer
-    EventMachine.run {
-      EventMachine.add_timer(30) {
-        if voting_round_end_time
-          vote_next_word
-        end
-      }
-    }
+    in_thirty_sec = Time.now + 30.seconds
+    job = ChangeVotingWordIdxJob.set(wait_until: in_thirty_sec).perform_later(id)
+    update({ job_id: "#{job_id} #{job.job_id}" })
   end
 
   def sorted_set_name
@@ -130,28 +126,15 @@ class Question < ApplicationRecord
   end
 
   def update_start_voting_background_job
-    # if !job_id.nil?
-    #   # cancel old job
-    #   StartVotingJob.cancel(job_id)
-    # end
+    if !job_id.nil?
+      # cancel old job
+      StartVotingJob.cancel(job_id)
+    end
 
     if start_time && start_time > Time.now
       # create new job
-      EventMachine.run {
-        timer_delay = start_time.to_i - Time.now.to_i
-
-        if timer_delay > 0
-          EventMachine.add_timer(timer_delay) {
-            diff = (start_time.to_i - Time.now.to_i).abs
-            puts diff
-            if diff <= 10
-              activate_voting
-            end
-          }
-        end
-      }
-      # job = StartVotingJob.set(wait_until: start_time).perform_later(id)
-      # update({ job_id: job.job_id})
+      job = StartVotingJob.set(wait_until: start_time).perform_later(id)
+      update({ job_id: job.job_id})
     else
       # clear job_id
       # update({ job_id: nil})

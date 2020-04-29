@@ -1,7 +1,6 @@
 class StartVotingJob < ApplicationJob
   queue_as :start_voting
 
-  # sidekiq_options retry: 5
   sidekiq_options retry: false
 
   def perform(question_id)

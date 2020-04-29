@@ -3,29 +3,29 @@ in_ten_seconds = Time.now + 20.seconds
 q.update_start_time(in_ten_seconds)
 
 
-
+StartVotingJob.set(wait: 45.seconds).perform_later(q.id)
 
 require 'sidekiq/api'
 stats = Sidekiq::Stats.new
 
-
 sv = Sidekiq::Queue.new('start_voting')
-sv.each do |job|
-  puts job.jid
-end
+ss = Sidekiq::ScheduledSet.new
+ps = Sidekiq::ProcessSet.new
 
 
-# Sidekiq::Queue.all.each {|q| q.clear}
+# sv.each do |job|
+#   puts job.jid
+# end
 
 
 # nodemon websocket-server.js
-# redis-server /usr/local/etc/redis.conf
+# redis-start (aka redis-server /usr/local/etc/redis.conf)
 # rails s
 # bundle exec sidekiq -q start_voting
 
 tid = nil
-workers = Sidekiq::Workers.new
-workers.each do |process_id, thread_id, work, otro|
+w = Sidekiq::Workers.new
+w.each do |process_id, thread_id, work, otro|
   # puts process_id
   tid = thread_id
   puts thread_id
