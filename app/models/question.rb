@@ -80,7 +80,7 @@ class Question < ApplicationRecord
     # get top 10 words from redis
     top_ten = redis_client.zrevrange(sorted_set_name, 0, 9, { withscores: true })
 
-    winning_word = (!top_ten || !top_ten[0]) ? '<NO_VOTES>' : get_winning_word(top_ten)
+    winning_word = (!top_ten || !top_ten[0]) ? '' : get_winning_word(top_ten)
 
     in_thirty_sec = Time.now + 30.seconds
 
