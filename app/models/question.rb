@@ -21,6 +21,10 @@ class Question < ApplicationRecord
     end
   end
 
+  def voting_interval
+    15
+  end
+
   def redis_client
     @redis_client = @redis_client || Redis.new
     @redis_client
@@ -31,7 +35,7 @@ class Question < ApplicationRecord
   end
 
   def set_next_voting_round_timer
-    in_thirty_sec = Time.now + 30.seconds
+    in_thirty_sec = Time.now + voting_interval.seconds
     job = ChangeVotingWordIdxJob.set(wait_until: in_thirty_sec).perform_later(id)
     update({ job_id: "#{job_id} #{job.job_id}" })
   end
@@ -41,13 +45,13 @@ class Question < ApplicationRecord
   end
 
   def activate_voting
-    in_thirty_sec = Time.now + 30.seconds
+    in_thirty_sec = Time.now + voting_interval.seconds
     update({ voting_round_end_time: in_thirty_sec })
 
     set_next_voting_round_timer
 
     EM.run {
-      ws = Faye::WebSocket::Client.new("#{ws_url}?question=#{id}&start=true&voting_round_end_time=#{(Time.now + 30.seconds).to_i * 1000}")
+      ws = Faye::WebSocket::Client.new("#{ws_url}?question=#{id}&start=true&voting_round_end_time=#{(Time.now + voting_interval.seconds).to_i * 1000}")
 
       ws.on :open do |event|
         p [:open]
@@ -82,10 +86,10 @@ class Question < ApplicationRecord
 
     winning_word = (!top_ten || !top_ten[0]) ? '' : get_winning_word(top_ten)
 
-    in_thirty_sec = Time.now + 30.seconds
+    in_thirty_sec = Time.now + voting_interval.seconds
 
     # check for vote to end answer
-    if winning_word == '<END_SENTENCE>'
+    if winning_word == '(complete-answer)'
       update({ voting_round_end_time: nil, end_time: Time.now })
     else
       # concat winning_word to `question_text`
@@ -99,7 +103,7 @@ class Question < ApplicationRecord
 
     # push update to all WSs
     EM.run {
-      ws = Faye::WebSocket::Client.new("#{ws_url}?question=#{id}&vote_next_word=true&winning_word=#{winning_word}&voting_round_end_time=#{(Time.now + 30.seconds).to_i * 1000}")
+      ws = Faye::WebSocket::Client.new("#{ws_url}?question=#{id}&vote_next_word=true&winning_word=#{winning_word}&voting_round_end_time=#{(Time.now + voting_interval.seconds).to_i * 1000}")
 
       ws.on :open do |event|
         p [:open]
@@ -116,7 +120,7 @@ class Question < ApplicationRecord
 
   def update_start_time(start_time)
     update({
-      answer: nil,
+      # answer: nil,
       end_time: nil,
       start_time: start_time,
       voting_round_end_time: start_time,

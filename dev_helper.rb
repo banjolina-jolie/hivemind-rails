@@ -1,5 +1,5 @@
 q = Question.first
-in_ten_seconds = Time.now + 20.seconds
+in_ten_seconds = Time.now + 10.seconds
 q.update_start_time(in_ten_seconds)
 
 
@@ -25,10 +25,17 @@ ps = Sidekiq::ProcessSet.new
 
 tid = nil
 w = Sidekiq::Workers.new
+
+# tids = ['ow1enimjv', 'ow1enio1r']
+# Thread.list.each {|t|
+#   if tids.include?(t.object_id.to_s(36))
+#     t.exit
+#   end
+# }
+
 w.each do |process_id, thread_id, work, otro|
   # puts process_id
-  tid = thread_id
-  puts thread_id
+  # puts thread_id
   # puts work
   # puts otro
 end
