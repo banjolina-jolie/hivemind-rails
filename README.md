@@ -1,1 +1,1 @@
-# banjolina-jolie-hivemind-rails
+# hivemind-rails
