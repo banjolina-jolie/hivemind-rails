@@ -6,7 +6,7 @@ class AuthenticationController < ApplicationController
     if user && user.valid_password?(req_body["password"])
       render json: user.auth_payload
     else
-      render json: {errors: ['Invalid phone number or password']}, status: :unauthorized
+      render json: {errors: ['Invalid email or password']}, status: :unauthorized
     end
   end
 

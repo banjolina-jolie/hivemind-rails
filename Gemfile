@@ -47,3 +47,4 @@ gem 'faye-websocket'
 gem 'activejob-cancel'
 gem "pgcrypto"
 gem 'devise'
+gem 'jwt'

@@ -22,7 +22,7 @@ class Question < ApplicationRecord
   end
 
   def voting_interval
-    15
+    500
   end
 
   def redis_client

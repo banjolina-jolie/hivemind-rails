@@ -1,5 +1,10 @@
-q = Question.first
-in_ten_seconds = Time.now + 10.seconds
+# q = Question.first
+# q = Question.find('f6e73077-6e44-452f-adf4-d97a5d134b36')
+
+q = Question.where.not(end_time: nil).sort_by(&:start_time).last
+q = Question.where(end_time: nil).sort_by(&:start_time).try(:first)
+in_ten_seconds = Time.now + 30.seconds
+# in_ten_seconds = Time.now + 4.hours
 q.update_start_time(in_ten_seconds)
 
 
