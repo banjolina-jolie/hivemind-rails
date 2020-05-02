@@ -4,6 +4,7 @@ class AuthenticationController < ApplicationController
 
     user = User.find_for_database_authentication(email: req_body["email"])
     if user && user.valid_password?(req_body["password"])
+      user.set_auth_key_redis
       render json: user.auth_payload
     else
       render json: {errors: ['Invalid email or password']}, status: :unauthorized
