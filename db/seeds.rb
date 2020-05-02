@@ -28,19 +28,19 @@ users.each {|u| User.create(u)}
 
 questions = [
   {
-    user_id: 1,
+    user_id: User.first.id,
     start_time: 1.day.from_now,
     voting_round_end_time: 1.day.from_now,
     question_text: 'Why is the sky blue?'
   },
   {
-    user_id: 1,
+    user_id: User.first.id,
     start_time: 2.days.from_now,
     voting_round_end_time: 2.days.from_now,
     question_text: 'What is the meaning of life?'
   },
   {
-    user_id: 1,
+    user_id: User.first.id,
     start_time: 3.days.ago,
     voting_round_end_time: 3.days.ago,
     end_time: 2.days.ago,
@@ -48,7 +48,7 @@ questions = [
     answer: 'There probably is.'
   },
   {
-    user_id: 1,
+    user_id: User.first.id,
     start_time: 3.days.ago,
     voting_round_end_time: 3.days.ago,
     end_time: 2.days.ago,
