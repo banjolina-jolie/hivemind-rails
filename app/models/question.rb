@@ -22,7 +22,7 @@ class Question < ApplicationRecord
   end
 
   def voting_interval
-    60
+    180
   end
 
   def redis_client
@@ -35,9 +35,9 @@ class Question < ApplicationRecord
   end
 
   def set_next_voting_round_timer
-    in_thirty_sec = Time.now + voting_interval.seconds
-    job = ChangeVotingWordIdxJob.set(wait_until: in_thirty_sec).perform_later(id)
-    update({ job_id: "#{job_id} #{job.job_id}" })
+    voting_round_end_time = Time.now + voting_interval.seconds
+    job = ChangeVotingWordIdxJob.set(wait_until: voting_round_end_time).perform_later(id)
+    update({ job_id: job.job_id })
   end
 
   def sorted_set_name
@@ -45,8 +45,8 @@ class Question < ApplicationRecord
   end
 
   def activate_voting
-    in_thirty_sec = Time.now + voting_interval.seconds
-    update({ voting_round_end_time: in_thirty_sec })
+    voting_round_end_time = Time.now + voting_interval.seconds
+    update({ voting_round_end_time: voting_round_end_time })
 
     set_next_voting_round_timer
 
@@ -86,7 +86,7 @@ class Question < ApplicationRecord
 
     winning_word = (!top_ten || !top_ten[0]) ? '' : get_winning_word(top_ten)
 
-    in_thirty_sec = Time.now + voting_interval.seconds
+    voting_round_end_time = Time.now + voting_interval.seconds
 
     # check for vote to end answer
     if winning_word == '(complete-answer)'
@@ -95,7 +95,7 @@ class Question < ApplicationRecord
       # concat winning_word to `question_text`
       new_answer = "#{answer} #{winning_word}"
       set_next_voting_round_timer
-      update({ answer: new_answer, voting_round_end_time: in_thirty_sec })
+      update({ answer: new_answer, voting_round_end_time: voting_round_end_time })
     end
 
     # clear redis
