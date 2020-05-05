@@ -22,7 +22,8 @@ class Question < ApplicationRecord
   end
 
   def voting_interval
-    180
+    # 180
+    30
   end
 
   def redis_client
@@ -36,7 +37,10 @@ class Question < ApplicationRecord
 
   def set_next_voting_round_timer
     voting_round_end_time = Time.now + voting_interval.seconds
+    puts "~~~~~~~~~#{voting_round_end_time}~~~~~~~~~"
     job = ChangeVotingWordIdxJob.set(wait_until: voting_round_end_time).perform_later(id)
+    puts '~~~~~~~~~set_next_voting_round_timer~~~~~~~~~'
+    puts "~~~~~~~~~#{job.job_id}~~~~~~~~~"
     update({ job_id: job.job_id })
   end
 
@@ -81,6 +85,7 @@ class Question < ApplicationRecord
   end
 
   def vote_next_word
+    puts '~~~~~~~~~vote_next_word~~~~~~~~~'
     # get top 10 words from redis
     top_ten = redis_client.zrevrange(sorted_set_name, 0, 9, { withscores: true })
 
@@ -90,12 +95,13 @@ class Question < ApplicationRecord
 
     # check for vote to end answer
     if winning_word == '(complete-answer)'
-      update({ voting_round_end_time: nil, end_time: Time.now })
+      voting_round_end_time = nil
+      update({ voting_round_end_time: voting_round_end_time, end_time: Time.now })
     else
       # concat winning_word to `question_text`
-      new_answer = "#{answer} #{winning_word}"
-      set_next_voting_round_timer
+      new_answer = "#{answer} #{winning_word}".strip
       update({ answer: new_answer, voting_round_end_time: voting_round_end_time })
+      set_next_voting_round_timer
     end
 
     # clear redis
@@ -103,7 +109,7 @@ class Question < ApplicationRecord
 
     # push update to all WSs
     EM.run {
-      ws = Faye::WebSocket::Client.new("#{ws_url}?question=#{id}&vote_next_word=true&winning_word=#{winning_word}&voting_round_end_time=#{(Time.now + voting_interval.seconds).to_i * 1000}")
+      ws = Faye::WebSocket::Client.new("#{ws_url}?question=#{id}&vote_next_word=true&winning_word=#{winning_word}&voting_round_end_time=#{voting_round_end_time.to_i * 1000}")
 
       ws.on :open do |event|
         p [:open]
@@ -118,27 +124,17 @@ class Question < ApplicationRecord
     }
   end
 
-  def update_start_time(start_time)
-    update({
-      # answer: nil,
-      end_time: nil,
-      start_time: start_time,
-      voting_round_end_time: start_time,
-      job_id: nil,
-    })
-    update_start_voting_background_job
-  end
-
   def update_start_voting_background_job
     if !job_id.nil?
-      # cancel old job
+      # cancel old job (dont know what type it is)
       StartVotingJob.cancel(job_id)
+      ChangeVotingWordIdxJob.cancel(job_id)
     end
 
     if start_time && start_time > Time.now
       # create new job
       job = StartVotingJob.set(wait_until: start_time).perform_later(id)
-      update({ job_id: job.job_id})
+      update_columns({ job_id: job.job_id, voting_round_end_time: start_time, end_time: nil })
     else
       # clear job_id
       # update({ job_id: nil})

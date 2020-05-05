@@ -3,10 +3,16 @@
 
 q = Question.where.not(end_time: nil).sort_by(&:start_time).last
 q = Question.where(end_time: nil).sort_by(&:start_time).try(:first)
-# in_ten_seconds = Time.now + 1.minute
+
 in_ten_seconds = Time.now + 30.seconds
-# in_ten_seconds = Time.now + 4.hours
-q.update_start_time(in_ten_seconds)
+q.update({
+  answer: nil,
+  end_time: nil,
+  start_time: in_ten_seconds,
+  voting_round_end_time: in_ten_seconds,
+  job_id: nil,
+})
+q.update_start_voting_background_job
 
 
 StartVotingJob.set(wait: 45.seconds).perform_later(q.id)
