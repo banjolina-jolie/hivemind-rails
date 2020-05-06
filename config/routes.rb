@@ -6,7 +6,7 @@ Rails.application.routes.draw do
   get 'me' => 'me#show'
   get 'home' => 'home#show'
 
-  post 'question' => 'question#create'
+  post 'questions' => 'question#create'
   put 'question/:question_id' => 'question#update'
   get 'question/:question_id' => 'question#show'
 
