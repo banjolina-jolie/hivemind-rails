@@ -1,9 +1,9 @@
 # q = Question.first
 # q = Question.find('f6e73077-6e44-452f-adf4-d97a5d134b36')
 
-q = Question.where(end_time: nil).sort_by(&:start_time).try(:first)
 
 q = Question.where.not(end_time: nil).sort_by(&:start_time).last
+q = Question.where(end_time: nil).sort_by(&:start_time).try(:first)
 new_start_time = Time.now + 10.seconds
 q.update({
   answer: nil,

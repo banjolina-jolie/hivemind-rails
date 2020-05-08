@@ -9,6 +9,7 @@ class QuestionController < ApplicationController
   def create
     req_body = JSON.parse(request.body.read)
     q = Question.create(req_body)
+    q.update_start_voting_background_job
     render json: q
   end
 

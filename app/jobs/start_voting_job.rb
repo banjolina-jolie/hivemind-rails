@@ -8,7 +8,6 @@ class StartVotingJob < ApplicationJob
       puts 'PERFORM START VOTING'
       q = Question.find(question_id)
       diff = (q.start_time.to_i - Time.now.to_i).abs
-      puts diff
       if diff <= 10
         q.activate_voting
       end
@@ -17,7 +16,6 @@ class StartVotingJob < ApplicationJob
       puts e.message
       puts e.backtrace.inspect
     end
-
     true
   end
 end
