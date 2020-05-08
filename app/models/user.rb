@@ -30,7 +30,7 @@ class User < ApplicationRecord
   end
 
   def set_auth_key_redis
-
+    redis_client.set("#{JsonWebToken.encode({ user_id: id })}-auth", true)
   end
 
 end

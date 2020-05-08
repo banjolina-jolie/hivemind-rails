@@ -1,21 +1,16 @@
 # q = Question.first
 # q = Question.find('f6e73077-6e44-452f-adf4-d97a5d134b36')
 
-q = Question.where.not(end_time: nil).sort_by(&:start_time).last
 q = Question.where(end_time: nil).sort_by(&:start_time).try(:first)
 
-in_ten_seconds = Time.now + 30.seconds
+q = Question.where.not(end_time: nil).sort_by(&:start_time).last
+new_start_time = Time.now + 10.seconds
 q.update({
   answer: nil,
-  end_time: nil,
-  start_time: in_ten_seconds,
-  voting_round_end_time: in_ten_seconds,
-  job_id: nil,
+  start_time: new_start_time,
 })
 q.update_start_voting_background_job
 
-
-StartVotingJob.set(wait: 45.seconds).perform_later(q.id)
 
 require 'sidekiq/api'
 stats = Sidekiq::Stats.new

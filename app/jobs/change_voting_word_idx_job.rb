@@ -14,9 +14,6 @@ class ChangeVotingWordIdxJob < ApplicationJob
       end
       true
     rescue StandardError => e
-      puts 'change shit fucked'
-      puts 'change shit fucked'
-      puts 'change shit fucked'
       puts e.message
       puts e.backtrace.inspect
     end

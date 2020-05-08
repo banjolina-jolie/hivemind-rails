@@ -113,7 +113,7 @@ class Question < ApplicationRecord
 
       ws.on :open do |event|
         p [:open]
-        sleep 10
+        sleep 5
         ws.close
       end
 
@@ -134,10 +134,11 @@ class Question < ApplicationRecord
     if start_time && start_time > Time.now
       # create new job
       job = StartVotingJob.set(wait_until: start_time).perform_later(id)
-      update_columns({ job_id: job.job_id, voting_round_end_time: start_time, end_time: nil })
-    else
-      # clear job_id
-      # update({ job_id: nil})
+      update_columns({
+        job_id: job.job_id,
+        voting_round_end_time: start_time,
+        end_time: nil
+      })
     end
   end
 
