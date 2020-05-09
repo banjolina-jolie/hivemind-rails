@@ -2,5 +2,4 @@
 :verbose: true
 :concurrency: 10
 :queues:
-  - start_voting
   - change_voting_word_idx

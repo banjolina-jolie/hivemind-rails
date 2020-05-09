@@ -1,5 +1,5 @@
 class QuestionController < ApplicationController
-  # before_action :authenticate_request!
+  before_action :authenticate_request!
 
   def show
     q = Question.find_by(id: params[:question_id]);

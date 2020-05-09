@@ -10,7 +10,7 @@ class ChangeVotingWordIdxJob < ApplicationJob
       q = Question.find(question_id)
 
       if q.voting_round_end_time
-        q.vote_next_word
+        q.activate_next_voting_round
       end
       true
     rescue StandardError => e

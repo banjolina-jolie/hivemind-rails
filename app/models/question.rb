@@ -22,13 +22,24 @@ class Question < ApplicationRecord
   end
 
   def voting_interval
-    # 180
-    30
+    45
   end
 
   def redis_client
-    @redis_client = @redis_client || Redis.new
-    @redis_client
+    if @redis_client
+      @redis_client
+    else
+      @redis_client = Redis.new
+      @redis_client.smembers("processes").each do |pro|
+        @redis_client.expire(pro, 60)
+        @redis_client.expire("#{pro}:workers", 60)
+      end
+      @redis_client
+    end
+  end
+
+  def sorted_set_name
+    "#{id}-scores"
   end
 
   def scores
@@ -39,33 +50,6 @@ class Question < ApplicationRecord
     voting_round_end_time = Time.now + voting_interval.seconds
     job = ChangeVotingWordIdxJob.set(wait_until: voting_round_end_time).perform_later(id)
     update({ job_id: job.job_id })
-  end
-
-  def sorted_set_name
-    "#{id}-scores"
-  end
-
-  def activate_voting
-    voting_round_end_time = Time.now + voting_interval.seconds
-    update({ voting_round_end_time: voting_round_end_time })
-
-    set_next_voting_round_timer
-
-    EM.run {
-      ws = Faye::WebSocket::Client.new("#{ws_url}?question=#{id}&start=true&voting_round_end_time=#{(Time.now + voting_interval.seconds).to_i * 1000}")
-
-      ws.on :open do |event|
-        p [:open]
-        sleep 10
-        ws.close
-      end
-
-      ws.on :close do |event|
-        ws = nil
-        p [:close, event.code, event.reason]
-      end
-    }
-
   end
 
   def get_winning_word(top_ten)
@@ -81,8 +65,8 @@ class Question < ApplicationRecord
     tied_for_first[:words].sample
   end
 
-  def vote_next_word
-    puts '~~~~~~~~~vote_next_word~~~~~~~~~'
+  def activate_next_voting_round
+    puts '~~~~~~~~~activate_next_voting_round~~~~~~~~~'
     # get top 10 words from redis
     top_ten = redis_client.zrevrange(sorted_set_name, 0, 9, { withscores: true })
 
@@ -124,13 +108,11 @@ class Question < ApplicationRecord
   def update_start_voting_background_job
     if !job_id.nil?
       # cancel old job (dont know what type it is)
-      StartVotingJob.cancel(job_id)
       ChangeVotingWordIdxJob.cancel(job_id)
     end
 
     if start_time && start_time > Time.now
       # create new job
-      # job = StartVotingJob.set(wait_until: start_time).perform_later(id)
       job = ChangeVotingWordIdxJob.set(wait_until: start_time).perform_later(id)
       update_columns({
         job_id: job.job_id,
