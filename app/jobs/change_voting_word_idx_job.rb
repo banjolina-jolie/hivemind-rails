@@ -1,5 +1,5 @@
 class ChangeVotingWordIdxJob < ApplicationJob
-  queue_as :start_voting
+  queue_as :change_voting_word_idx
 
   # sidekiq_options retry: 5
   sidekiq_options retry: false

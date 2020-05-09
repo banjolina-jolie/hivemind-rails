@@ -25,11 +25,6 @@ ps = Sidekiq::ProcessSet.new
 # end
 
 
-# nodemon websocket-server.js
-# redis-start (aka redis-server /usr/local/etc/redis.conf)
-# rails s
-# bundle exec sidekiq -q start_voting
-
 tid = nil
 w = Sidekiq::Workers.new
 

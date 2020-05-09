@@ -37,10 +37,7 @@ class Question < ApplicationRecord
 
   def set_next_voting_round_timer
     voting_round_end_time = Time.now + voting_interval.seconds
-    puts "~~~~~~~~~#{voting_round_end_time}~~~~~~~~~"
     job = ChangeVotingWordIdxJob.set(wait_until: voting_round_end_time).perform_later(id)
-    puts '~~~~~~~~~set_next_voting_round_timer~~~~~~~~~'
-    puts "~~~~~~~~~#{job.job_id}~~~~~~~~~"
     update({ job_id: job.job_id })
   end
 
@@ -133,7 +130,8 @@ class Question < ApplicationRecord
 
     if start_time && start_time > Time.now
       # create new job
-      job = StartVotingJob.set(wait_until: start_time).perform_later(id)
+      # job = StartVotingJob.set(wait_until: start_time).perform_later(id)
+      job = ChangeVotingWordIdxJob.set(wait_until: start_time).perform_later(id)
       update_columns({
         job_id: job.job_id,
         voting_round_end_time: start_time,
