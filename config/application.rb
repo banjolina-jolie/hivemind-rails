@@ -40,7 +40,7 @@ module RestServer
          origins '*'
          resource '*',
             :headers => :any,
-            :methods => [:get, :post, :options]
+            :methods => [:get, :post, :put, :options]
        end
     end
   end

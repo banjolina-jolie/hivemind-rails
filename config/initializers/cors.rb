@@ -7,7 +7,7 @@
 
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
-    origins Rails.env.production? ? 'http://hivemind-frontend.herokuapp.com/' : '*'
+    origins Rails.env.production? ? 'hivemind-frontend.herokuapp.com' : '*'
 
     resource '*',
       headers: :any,
