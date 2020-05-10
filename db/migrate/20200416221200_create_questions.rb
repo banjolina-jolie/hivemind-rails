@@ -9,6 +9,7 @@ class CreateQuestions < ActiveRecord::Migration[6.0]
       t.datetime :start_time
       t.datetime :voting_round_end_time
       t.datetime :end_time
+      t.integer :voting_interval, null: false, default: 30
     end
 
     add_index :questions, :user_id

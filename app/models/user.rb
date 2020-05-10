@@ -1,5 +1,3 @@
-require "redis"
-
 class User < ApplicationRecord
   attr_accessor :redis_client
 
@@ -24,15 +22,6 @@ class User < ApplicationRecord
       email: email,
       is_admin: is_admin,
     }
-  end
-
-  def redis_client
-    @redis_client = @redis_client || Redis.new
-    @redis_client
-  end
-
-  def set_auth_key_redis
-    redis_client.set("#{JsonWebToken.encode({ user_id: id })}-auth", true)
   end
 
 end

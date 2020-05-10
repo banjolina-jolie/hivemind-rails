@@ -26,6 +26,7 @@ ActiveRecord::Schema.define(version: 2020_04_22_204825) do
     t.datetime "start_time"
     t.datetime "voting_round_end_time"
     t.datetime "end_time"
+    t.integer "voting_interval", default: 30, null: false
     t.index ["user_id"], name: "index_questions_on_user_id"
   end
 

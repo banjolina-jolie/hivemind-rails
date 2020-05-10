@@ -12,6 +12,7 @@ class Question < ApplicationRecord
   attribute :question_text, :string
   attribute :answer, :string
   attribute :job_id, :string
+  attribute :voting_interval, :integer
 
   def ws_url
     if Rails.env.production?
@@ -19,10 +20,6 @@ class Question < ApplicationRecord
     else
       'ws://localhost:9001'
     end
-  end
-
-  def voting_interval
-    45
   end
 
   def redis_client
@@ -77,29 +74,37 @@ class Question < ApplicationRecord
     # check for vote to end answer
     if winning_word == '(complete-answer)'
       voting_round_end_time = nil
-      update({ voting_round_end_time: voting_round_end_time, end_time: Time.now })
+      update({
+        answer: "#{answer}.",
+        end_time: Time.now,
+        voting_round_end_time: voting_round_end_time,
+      })
     else
       # concat winning_word to `question_text`
       new_answer = "#{answer} #{winning_word}".strip
-      update({ answer: new_answer, voting_round_end_time: voting_round_end_time })
+      update({
+        answer: new_answer,
+        voting_round_end_time: voting_round_end_time
+      })
       set_next_voting_round_timer
     end
 
     # clear redis
     redis_client.keys("#{id}-*").each { |key| redis_client.del(key) }
 
-    # push update to all WSs
-
+    # use new thread or else sidekiq jobs get stuck in `busy`
     Thread.new {
       EM.run {
         server_id = 'rails-server'
         ws_jwt = JsonWebToken.encode({ user_id: server_id })
 
+        # simply opening the connection triggers WS server to push update to all subscribers
         ws = Faye::WebSocket::Client.new("#{ws_url}?question=#{id}&vote_next_word=true&winning_word=#{winning_word}&voting_round_end_time=#{voting_round_end_time.to_i * 1000}&auth=#{ws_jwt}&user=rails-server")
 
         ws.on :open do |event|
           p [:open]
           sleep 2
+          # close 2 seconds after opening
           ws.close
         end
 
@@ -123,7 +128,7 @@ class Question < ApplicationRecord
       update_columns({
         job_id: job.job_id,
         voting_round_end_time: start_time,
-        end_time: nil
+        end_time: nil,
       })
     end
   end
