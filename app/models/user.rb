@@ -10,6 +10,7 @@ class User < ApplicationRecord
 
   attribute :name, :string
   attribute :email, :string
+  attribute :is_admin, :boolean
 
   def auth_payload
     s = serialize
@@ -21,6 +22,7 @@ class User < ApplicationRecord
     {
       id: id,
       email: email,
+      is_admin: is_admin,
     }
   end
 

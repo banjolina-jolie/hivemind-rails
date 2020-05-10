@@ -89,19 +89,21 @@ class Question < ApplicationRecord
     redis_client.keys("#{id}-*").each { |key| redis_client.del(key) }
 
     # push update to all WSs
-    EM.run {
-      ws = Faye::WebSocket::Client.new("#{ws_url}?question=#{id}&vote_next_word=true&winning_word=#{winning_word}&voting_round_end_time=#{voting_round_end_time.to_i * 1000}")
+    Thread.new {
+      EM.run {
+        ws = Faye::WebSocket::Client.new("#{ws_url}?question=#{id}&vote_next_word=true&winning_word=#{winning_word}&voting_round_end_time=#{voting_round_end_time.to_i * 1000}")
 
-      ws.on :open do |event|
-        p [:open]
-        sleep 5
-        ws.close
-      end
+        ws.on :open do |event|
+          p [:open]
+          sleep 2
+          ws.close
+        end
 
-      ws.on :close do |event|
-        p [:close, event.code, event.reason]
-        ws = nil
-      end
+        ws.on :close do |event|
+          p [:close, event.code, event.reason]
+          ws = nil
+        end
+      }
     }
   end
 
