@@ -39,10 +39,6 @@ class Question < ApplicationRecord
     "#{id}-scores"
   end
 
-  def scores
-    redis_client.zrevrangebyscore(sorted_set_name, '+inf', 1, { withscores: true })
-  end
-
   def set_next_voting_round_timer
     voting_round_end_time = Time.now + voting_interval.seconds
     job = ChangeVotingWordIdxJob.set(wait_until: voting_round_end_time).perform_later(id)
@@ -73,6 +69,9 @@ class Question < ApplicationRecord
 
     # check for vote to end answer
     if winning_word == '(complete-answer)'
+      # clear redis of voting data
+      redis_client.del("*#{id}*")
+
       voting_round_end_time = nil
       update({
         answer: "#{answer}.",
