@@ -5,6 +5,7 @@ Rails.application.routes.draw do
   post 'auth-user' => 'authentication#authenticate_user'
   get 'me' => 'me#show'
   get 'home' => 'home#show'
+  post 'users' => 'user#create'
 
   get 'questions' => 'question#showAll'
   post 'questions' => 'question#create'
