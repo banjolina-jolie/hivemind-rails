@@ -7,18 +7,26 @@ class QuestionController < ApplicationController
   end
 
   def create
-    req_body = JSON.parse(request.body.read)
-    q = Question.create(req_body)
-    q.update_start_voting_background_job
-    render json: q
+    if current_user.is_admin
+      req_body = JSON.parse(request.body.read)
+      q = Question.create(req_body)
+      q.update_start_voting_background_job
+      render json: q
+    else
+      render json: { errors: ['Not Authenticated'] }, status: :unauthorized
+    end
   end
 
   def update
-    req_body = JSON.parse(request.body.read)
-    q = Question.find_by(id: params[:question_id]);
-    q.update(req_body)
-    q.update_start_voting_background_job
-    render json: q
+    if current_user.is_admin
+      req_body = JSON.parse(request.body.read)
+      q = Question.find_by(id: params[:question_id]);
+      q.update(req_body)
+      q.update_start_voting_background_job
+      render json: q
+    else
+      render json: { errors: ['Not Authenticated'] }, status: :unauthorized
+    end
   end
 
   def showAll
