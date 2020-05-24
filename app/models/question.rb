@@ -117,7 +117,6 @@ class Question < ApplicationRecord
 
   def update_start_voting_background_job
     if !job_id.nil?
-      # cancel old job (dont know what type it is)
       ChangeVotingWordIdxJob.cancel(job_id)
     end
 
